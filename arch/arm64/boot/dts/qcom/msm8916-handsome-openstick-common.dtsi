@@ -7,7 +7,6 @@
 /dts-v1/;
 
 #include "msm8916-pm8916.dtsi"
-#include "msm8916-modem.dtsi"
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
@@ -28,10 +27,6 @@
 	};
 
 	reserved-memory {
-		mpss_mem: gps_mem: mpss@86800000 {
-			reg = <0x0 0x86800000 0x0 0x5500000>;
-			no-map;
-		};
 	};
 
 	usb_id: usb-id {
@@ -41,18 +36,6 @@
 		pinctrl-0 = <&usb_id_default>;
 	};
 
-};
-
-/*
- * The modem firmware sends a "query_size" memshare request for client ID 1,
- * but basically does not do anything with it. GPS works only if:
- *   - Memshare is not present or
- *   - Memshare replies to the request with an error
- * Overall it seems pointless to enable memshare for this device.
- */
- 
-&memshare {
-	status = "disabled";
 };
 
 &blsp_dma {
@@ -207,4 +190,25 @@
 		regulator-min-microvolt = <2700000>;
 		regulator-max-microvolt = <2700000>;
 	};
+};
+
+/*
+ * Modem disabled build: ensure the MSS remote processor and all its
+ * modem-transport sub-nodes stay disabled so that no modem driver or
+ * firmware is ever loaded on this board.
+ */
+&mpss {
+	status = "disabled";
+
+	bam-dmux {
+		status = "disabled";
+	};
+
+	smd-edge {
+		status = "disabled";
+	};
+};
+
+&memshare {
+	status = "disabled";
 };
