@@ -47,7 +47,7 @@
 };
 
 &lpass {
-	status = "okay";
+	status = "disabled";
 };
 
 &pronto {
@@ -200,6 +200,14 @@
 &mpss {
 	status = "disabled";
 
+	mba {
+		/delete-property/ memory-region;
+	};
+
+	mpss {
+		/delete-property/ memory-region;
+	};
+
 	bam-dmux {
 		status = "disabled";
 	};
@@ -211,4 +219,70 @@
 
 &memshare {
 	status = "disabled";
+};
+
+/*
+ * OpenStick dongles are headless: no display, no camera, no audio codec and
+ * no video decoder on the board. Keep those controllers un-probed so they
+ * never request firmware, clocks, power domains or IOMMU contexts.
+ */
+&soc {
+	gpu@1c00000 {
+		status = "disabled";
+	};
+};
+
+&venus {
+	status = "disabled";
+	/delete-property/ memory-region;
+};
+
+&lpass_codec {
+	status = "disabled";
+};
+
+/* Analog half of the (unused) audio codec, inside the PMIC. */
+&wcd_codec {
+	status = "disabled";
+};
+
+/* Only venus, mdss and camss used this one; all three are off. */
+&apps_iommu {
+	status = "disabled";
+};
+
+/* Only the GPU used this one. */
+&gpu_iommu {
+	status = "disabled";
+};
+
+/*
+ * The modem firmware region is the largest reserved block on this board
+ * (43 MiB) and is dead weight once the MSS remote processor is disabled.
+ * Dropping it (plus the modem-side rmtfs/rfsa/MBA regions and the venus
+ * region) returns roughly 50 MiB to the buddy allocator, which is a
+ * meaningful amount of RAM on a 512 MiB device.
+ */
+/delete-node/ &mpss_mem;
+/delete-node/ &mba_mem;
+/delete-node/ &venus_mem;
+
+/ {
+	reserved-memory {
+		/delete-node/ reserved@86680000;
+		/delete-node/ rmtfs@86700000;
+		/delete-node/ rfsa@867e0000;
+	};
+};
+
+/*
+ * The hexagon SMP2P channels belong to the modem remote processor, which
+ * patch 1 disabled: without it nobody needs to set up interrupts and shared
+ * memory entries for a core that will never boot. The wcnss channels stay,
+ * pronto uses them.
+ */
+/ {
+	smp2p-hexagon {
+		status = "disabled";
+	};
 };
